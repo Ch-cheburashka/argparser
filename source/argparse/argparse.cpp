@@ -18,6 +18,13 @@ std::map<std::string,std::string> string_tokenizing(int argc, char** argv) {
     return tokens;
 }
 
+template <typename T>
+bool compare_types (const typed_value &any) {
+    if (any.m_default_value.type() == typeid(T))
+        return true;
+    return false;
+}
+
 std::map<std::string,typed_value> argparse::parse_args(int argc, char **argv) {
     std::map<std::string,typed_value> options_map;
     auto tokens = string_tokenizing(argc,argv);
@@ -35,16 +42,16 @@ std::map<std::string,typed_value> argparse::parse_args(int argc, char **argv) {
             else {
                 if (option.long_name != argv[i] && option.short_name != argv[i])
                     continue;
-                if (option.default_value.m_default_value.type() == typeid(int))
+                if (compare_types<int>(option.default_value))
                     options_map.emplace(option.long_name.substr(2),
                                         value<int>().default_value(std::stoi(tokens.at(argv[i]))));
-                else if (option.default_value.m_default_value.type() == typeid(double))
+                else if (compare_types<double>(option.default_value))
                     options_map.emplace(option.long_name.substr(2),
                                         value<double>().default_value(std::stod(tokens.at(argv[i]))));
-                else if (option.default_value.m_default_value.type() == typeid(bool))
+                else if (compare_types<bool>(option.default_value))
                     options_map.emplace(option.long_name.substr(2),
                                         value<bool>().default_value(std::stoi(tokens.at(argv[i]))));
-                else if (option.default_value.m_default_value.type() == typeid(std::filesystem::path))
+                else if (compare_types<std::filesystem::path>(option.default_value))
                     options_map.emplace(option.long_name.substr(2),
                                         value<std::filesystem::path>().default_value(std::filesystem::path(tokens.at(argv[i]))));
                 i+=2;
