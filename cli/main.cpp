@@ -2,13 +2,13 @@
 #include <argparse/argparse.hpp>
 #include <filesystem>
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 
     argparse parser{"Allowed options"};
 
     parser.add_option(argparse::option{
             .short_name="-c", .long_name="--count",
-            .required=false, .default_value=value<int>().default_value(10),
+            .required=true, .default_value=value<int>().default_value(10),
             .help="Set number of times to count"
     });
 
@@ -24,11 +24,21 @@ int main(int argc, char** argv) {
             .required=false, .help="Print help message"
     });
 
-    auto arguments = parser.parse_args(argc,argv);
+    parser.add_option(argparse::option{
+            .short_name = "-g", .long_name = "--greet",
+            .required = true, .default_value=value<std::string>().default_value("moron"),
+            .help = "Set name to greet"
+    });
+
+    auto arguments = parser.parse_args(argc, argv);
 
     if (arguments.count("help")) {
         parser.print_options();
         return 1;
+    }
+
+    if (arguments.count("greet")) {
+        std::cout << "Hello, " << arguments.at("greet").get_value<std::string>() << "!\n";
     }
 
     if (arguments.count("count")) {
@@ -42,8 +52,7 @@ int main(int argc, char** argv) {
         std::cout << "Path to output was set to " << arguments.at("output").get_value<std::filesystem::path>() << "\n";
         if (exists(arguments.at("output").get_value<std::filesystem::path>())) {
             std::cout << "path exists\n";
-        }
-        else
+        } else
             std::cout << "path DOESN'T exist\n";
     }
 

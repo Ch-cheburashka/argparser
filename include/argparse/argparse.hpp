@@ -33,9 +33,9 @@ struct value : public typed_value {
 
 class argparse {
 private:
-    std::string options_description;
+    std::string _options_description;
 public:
-    explicit argparse(std::string od) : options_description(std::move(od)) {}
+    explicit argparse(std::string options_description) : _options_description(std::move(options_description)) {}
     struct option {
         std::string short_name;
         std::string long_name;
