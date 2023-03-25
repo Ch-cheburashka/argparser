@@ -5,18 +5,8 @@
 #include <argparse/argparse.hpp>
 #include <filesystem>
 
-constexpr char *DEFAULT_STR = "default";
-
-std::map<std::string, std::string> string_tokenizing(int argc, char **argv) {
-    std::map<std::string, std::string> tokens;
-    for (auto i = 1; i < argc; i++) {
-        if (i != argc - 1 && argv[i + 1][0] != '-')
-            tokens.emplace(argv[i], argv[i + 1]);
-        else
-            tokens.emplace(argv[i], DEFAULT_STR);
-    }
-    return tokens;
-}
+constexpr char *default_str = "default";
+constexpr char option_mark = '-';
 
 template<typename T>
 bool compare_types(const typed_value &any) {
@@ -31,31 +21,44 @@ bool option_exists(int index, char** argv, const std::vector<argparse::option> &
     }) != options.end();
 }
 
-void check_for_required(std::vector<argparse::option>& options, int argc, char **argv) {
-    bool found = false;
-    std::string required_options;
-    for (auto && option : options) {
-        found = false;
-        for (auto i = 1; i < argc; ++i) {
-            if (option.required) {
-                if (argv[i] == option.long_name || argv[i] == option.short_name)
-                    found = true;
-                if (required_options.find(option.long_name) == std::string::npos)
-                    required_options += option.long_name + "(" + option.short_name + ")" + " ";
-            }
+std::map<std::string, std::string> tokenize_args(int argc, char **argv, std::vector<argparse::option> required) {
+    std::map<std::string, std::string> tokens;
+    std::string current_option = "";
+    for (auto i = 1; i < argc; ++i) {
+        if (argv[i][0] == option_mark && current_option.empty())
+            current_option = argv[i];
+        else if (argv[i][0] != option_mark) {
+            tokens.emplace(current_option, std::string(argv[i]));
+            current_option.clear();
         }
+        else  {
+            tokens.emplace(current_option,default_str);
+            current_option.clear();
+            i--;
+        }
+        required.erase(std::remove_if(required.begin(), required.end(), [current_option](auto opt){
+            return opt.short_name == current_option || opt.long_name == current_option || !opt.required;
+        }),required.end());
     }
-    if (!found)
-        throw std::logic_error("\n\tlack of required arguments\n\trequired arguments are: " + required_options);
+    if (!current_option.empty())
+        tokens.emplace(current_option,default_str);
+    if (!required.empty()) {
+        std::stringstream error_stream;
+        error_stream << "There are some required parameters missing:\n";
+        for (auto &option : required) {
+            error_stream << option.long_name << "(" + option.short_name + ")" << "\n";
+        }
+        throw std::logic_error(error_stream.str());
+    }
+    return tokens;
 }
 
 std::map<std::string, typed_value> argparse::parse_args(int argc, char **argv) {
     std::map<std::string, typed_value> options_map;
-    auto tokens = string_tokenizing(argc, argv);
-    check_for_required(options,argc,argv);
+    auto tokens = tokenize_args(argc, argv,options);
     for (auto i = 1; i < argc;) {
         for (auto &&option: options) {
-            if (tokens.at(argv[i]) == DEFAULT_STR) {
+            if (tokens.at(argv[i]) == default_str) {
                 if (option.long_name != argv[i] && option.short_name != argv[i]) {
                     if (option_exists(i, argv, options))
                         continue;

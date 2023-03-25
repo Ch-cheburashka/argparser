@@ -32,15 +32,9 @@ int main(int argc, char **argv) {
 
     auto arguments = parser.parse_args(argc, argv);
 
-    if (arguments.count("help")) {
-        parser.print_options();
-        return 1;
-    }
-
     if (arguments.count("greet")) {
         std::cout << "Hello, " << arguments.at("greet").get_value<std::string>() << "!\n";
     }
-
     if (arguments.count("count")) {
         std::cout << "Number of times to count was set to " << arguments.at("count").get_value<int>() << "\n";
         for (auto i = 1; i <= arguments.at("count").get_value<int>(); ++i) {
@@ -54,6 +48,11 @@ int main(int argc, char **argv) {
             std::cout << "path exists\n";
         } else
             std::cout << "path DOESN'T exist\n";
+    }
+
+    if (arguments.count("help")) {
+        parser.print_options();
+        return 1;
     }
 
     return 0;
